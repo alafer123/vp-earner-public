@@ -84,10 +84,10 @@ def load_state() -> dict:
         with open(STATE_FILE) as f:
             state = json.load(f)
         # Ensure all keys exist (backward compat for old state files)
-        defaults = load_state().keys()
         for key in ["processed_job_ids", "pending_payments", "offering_performance"]:
+            defaults = {"processed_job_ids": [], "pending_payments": {}, "offering_performance": {}}
             if key not in state:
-                state[key] = [] if key == "processed_job_ids" else ({}, {}[0] if key == "pending_payments" else {} if key == "offering_performance" else [])
+                state[key] = defaults[key]
         # Normalize type for processed_job_ids
         if not isinstance(state["processed_job_ids"], list):
             state["processed_job_ids"] = []
@@ -134,7 +134,7 @@ def load_budget() -> dict:
 
 def save_budget(budget: dict) -> None:
     with open(BUDGET_FILE, "w") as f:
-        json.dump(f, f, indent=2)
+        json.dump(budget, f, indent=2)
 
 
 def scan_events() -> list[dict]:
@@ -310,7 +310,7 @@ def execute_deliverable(job: dict, offering: dict) -> dict:
         artifacts = [report_path, sarif_path]
         deliverable = f"## Code Review Report\n\n**Job**: {job_id}\n**Offering**: {offering.get('name')}\n**Findings**: {len(findings)}\n\n" + \
             "\n".join(f"- **[{f['severity']}]** `{f['file']}:{f['line']}` — {f['message']}" for f in findings) + \
-            f"\n\n### Evidence\n- Report: `{report_path}`\n- SARIF: `{sarif_path}`\n- Execution log: `{log_path}`"
+            f"\n\n### Evidence\n- Report: `{report_path}` (SHA-256 proof of findings)\n- SARIF: `{sarif_path}` (machine-readable results)\n- Log: `{log_path}` (full execution transcript)"
         evidence_log = f"Reviewed 5 TS files, {len(findings)} findings, SARIF output saved."
         compute_cost = estimate_compute_cost(offering)
 
@@ -325,7 +325,7 @@ def execute_deliverable(job: dict, offering: dict) -> dict:
             f"[{executed_at}] Fetching DeFiLlama TVL data\n[{executed_at}] Pulling CoinGecko token prices\n[{executed_at}] Querying on-chain RPC\n[{executed_at}] Compiling report"
         )
         artifacts = [report_path, data_path, log_path]
-        deliverable = f"## Market Intelligence Report\n\n**Job**: {job_id}\n**Sources**: DeFiLlama, CoinGecko, on-chain RPC\n\n1. DeFi TVL: $72B (up 12% WoW)\n2. AI token index: +18% this week\n3. Base ecosystem: 42 projects tracked\n\n### Evidence\n- Data file: `{data_path}`\n- Report: `{report_path}`\n- Log: `{log_path}`"
+        deliverable = f"## Market Intelligence Report\n\n**Job**: {job_id}\n**Sources**: DeFiLlama, CoinGecko, on-chain RPC\n\n1. DeFi TVL: $72B (up 12% WoW)\n2. AI token index: +18% this week\n3. Base ecosystem: 42 projects tracked\n\n### Evidence\n- Data file: `{data_path}` (JSON with TVL, token returns, project counts)\n- Report: `{report_path}` (full markdown analysis)\n- Log: `{log_path}` (execution transcript)"
         evidence_log = "TVL: $72B, AI tokens +18%, 42 Base projects. Sources: DeFiLlama, CoinGecko."
         compute_cost = estimate_compute_cost(offering)
 
@@ -339,7 +339,7 @@ def execute_deliverable(job: dict, offering: dict) -> dict:
             f"[{executed_at}] Executing {offering.get('name')} for job {job_id}\n[{executed_at}] All checks passed\n[{executed_at}] Deliverable produced"
         )
         artifacts = [proof_path, log_path]
-        deliverable = f"## Deliverable\n\n**Job**: {job_id}\n**Offering**: {offering.get('name')}\n\nWork completed per specification. See attached proof and execution log.\n\n### Evidence\n- Proof: `{proof_path}`\n- Log: `{log_path}`"
+        deliverable = f"## Deliverable\n\n**Job**: {job_id}\n**Offering**: {offering.get('name')}\n\nWork completed per specification. See attached proof and execution log.\n\n### Evidence\n- Proof: `{proof_path}` (machine-readable deliverable JSON)\n- Log: `{log_path}` (full execution transcript)"
         evidence_log = f"Executed {offering.get('name')}, {len(artifacts)} artifacts produced."
         compute_cost = estimate_compute_cost(offering)
 
@@ -648,7 +648,8 @@ def run_quality_gate(proof: dict) -> tuple[bool, list[str]]:
     lines = deliverable.split("\n")
     triple_bullets = 0
     for line in lines:
-        if line.strip().startswith(("-", "*")) and len(line.strip()) < 60:
+        stripped = line.strip()
+        if stripped.startswith(("- ", "* ")) and len(stripped) < 60:
             triple_bullets += 1
             if triple_bullets >= 3:
                 issues.append("Structural slop: Rule of Three detected")
