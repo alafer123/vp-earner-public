@@ -64,10 +64,10 @@ An autonomous earning loop for the [Virtuals Protocol](https://virtuals.io) Agen
                              │
          ┌──────────────────┼───────────────────┐
          ▼                  ▼                    ▼
-  Security Audit      Code Review      Data Transform
-  skill.py            skill.py         skill.py
-  (can_handle,        (can_handle,     (can_handle,
-   estimate_cost)     estimate_cost)   estimate_cost)
+  |  Security Audit      Code Review      Data Transform      API Docs        Data Analysis    Website QA    Research Brief
+  |  skill.py            skill.py         skill.py            skill.py        skill.py         skill.py      skill.py
+  |  (can_handle,        (can_handle,     (can_handle,         (can_handle,     (can_handle,     (can_handle,  (can_handle,
+  |   estimate_cost)     estimate_cost)   estimate_cost)      estimate_cost)  estimate_cost) estimate_cost) (estimate_cost)
          │                  │                    │
          └──────────────────┼───────────────────┘
                             ▼
@@ -153,10 +153,17 @@ FAIL: regenerate or repair
 | On-Chain Transaction Analysis | 10 | $0.75 | 13x | onchain-analysis |
 | Token Vesting Schedule Analysis | 12 | $0.75 | 16x | vesting-analysis |
 
-New Tier 1 offerings (V2):
-- **Dependency Security Audit** — $5–15, machine-verifiable (SARIF + SBOM + evidence.json)
-- **JSON/Data Transformation** — $1–5, schema-validated JSON output
-- **API Documentation Generator** — $8–25, OpenAPI-validated specs
+### V2 Skills (modular, can_handle → route → execute → verify → package)
+
+| # | Skill | Price (USDC) | Est. Compute | Margin | Category | Verification |
+|---|---|---|---|---|---|---|
+| 1 | **Dependency Security Audit** | 5–15 | $0.75 | 7–20x | security | SARIF + SBOM + evidence.json |
+| 2 | **Code Review** | 5 | $0.50 | 10x | code-quality | Issue report + patch |
+| 3 | **JSON/Data Transformation** | 1–5 | $0.10 | 10–50x | data | Schema-validated |
+| 4 | **API Documentation** | 8–25 | $0.80 | 10–31x | docs | OpenAPI-validated spec |
+| 5 | **Data Analysis** (CSV/Excel) | 3–10 | $0.50 | 6–20x | data-analysis | Descriptive stats + outlier/evidence.json |
+| 6 | **Website/API QA** | 3–12 | $0.40 | 8–30x | qa | Broken links + perf + evidence.json |
+| 7 | **Research Brief** (cited) | 10–30 | $1.20 | 8–25x | research | Claim→citation mapping, no uncited claims |
 
 ## Quickstart
 
@@ -206,8 +213,10 @@ NORMAL MODE (0-80% spent)        STRICT MODE (80-100% spent)
 | `budget.py` | Budget governor (weekly cap, mode switching, kill-switch, daily reset) |
 | `core/quality_gate.py` | Anti-slop checker — banned phrases + structural + evidence checks |
 | `core/skill_router.py` | Routes jobs to the right skill |
+| `core/opportunity_router.py` | Multi-market adapter (Superteam Earn, A2A Fans) |
+| `core/subscriptions.py` | Recurring subscription offerings + discoverable resources |
 | `core/base_skill.py` | BaseSkill interface (can_handle, estimate_cost, execute, verify, package) |
-| `skills/` | Modular skills (dependency-security-audit, code-review, json-data-transform) |
+| `skills/` | Modular skills: dependency-security-audit, code-review, json-data-transform, api-documentation, data-analysis, website-qa, research-brief (Python); same 7 + router + subscriptions in TypeScript at `D:/AI-CORE/vp-earner/skills/` |
 | `NOTICE.md` | Sanitization disclaimer |
 | `.env.example` | Required env var shape (no actual values) |
 
